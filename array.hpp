@@ -8,67 +8,67 @@
 template <typename T>
 class dynArray {
     private:
-        size_t   size;
-        size_t   width;
-        size_t   capacity;
+        size_t   size_;
+        size_t   width_;
+        size_t   capacity_;
 
-        uint8_t* data;
+        uint8_t* data_;
 
         void reallocate_(size_t bytes) {
             bytes = std::bit_ceil(bytes);
-            void* newData = realloc(data, bytes);
+            void* newData_ = realloc(data_, bytes);
 
-            if (!newData) throw std::bad_alloc();
+            if (!newData_) throw std::bad_alloc();
 
-            capacity = bytes;
-            data = (uint8_t*)newData;
+            capacity_ = bytes;
+            data_ = (uint8_t*)newData_;
         }
 
     public:
         dynArray(T v, size_t count) {
-            size = count;
-            width = sizeof(T);
+            size_ = count;
+            width_ = sizeof(T);
 
-            size_t bytes = width * count;
-            capacity = std::bit_ceil(bytes);
+            size_t bytes = width_ * count;
+            capacity_ = std::bit_ceil(bytes);
 
-            data = (uint8_t*)malloc(capacity);
-            T* arr = (T*)data;
+            data_ = (uint8_t*)malloc(capacity_);
+            T* arr = (T*)data_;
 
             for (size_t i = 0; i < count; i++) std::construct_at(&arr[i], v);
         }
 
         dynArray() {
-            size = 0;
-            width = sizeof(T);
-            capacity = 0;
-            data = nullptr;
+            size_ = 0;
+            width_ = sizeof(T);
+            capacity_ = 0;
+            data_ = nullptr;
         }
 
         ~dynArray() {
-            T* arr = (T*)data;
+            T* arr = (T*)data_;
 
-            for (size_t i = 0; i < size; i++) std::destroy_at(&arr[i]);
+            for (size_t i = 0; i < size_; i++) std::destroy_at(&arr[i]);
 
-            free(data);
+            free(data_);
         }
 
         T& operator[](size_t index) {
-            if (index >= size) throw std::out_of_range("index out of range");
+            if (index >= size_) throw std::out_of_range("index out of range");
             
-            T* arr = (T*)data;
+            T* arr = (T*)data_;
             return arr[index];
         }
 
         dynArray(std::initializer_list<T> values) {
-            size = values.size();
-            width = sizeof(T);
+            size_ = values.size();
+            width_ = sizeof(T);
 
-            size_t bytes = size * width;
-            capacity = std::bit_ceil(bytes);
-            data = (uint8_t*)malloc(capacity);
+            size_t bytes = size_ * width_;
+            capacity_ = std::bit_ceil(bytes);
+            data_ = (uint8_t*)malloc(capacity_);
 
-            T* arr = (T*)data;
+            T* arr = (T*)data_;
 
             size_t i = 0;
             for (const T& value : values) {
@@ -78,56 +78,61 @@ class dynArray {
         }
 
         dynArray& operator=(const T* arr) {
-            for (size_t i = 0; i < size; i++) std::destroy_at((T*)data + i);
+            for (size_t i = 0; i < size_; i++) std::destroy_at((T*)data_ + i);
 
-            T* dest = (T*)data;
-
-            for (size_t i = 0; i < size; i++) std::construct_at(&dest[i], arr[i]);
+            T* dest = (T*)data_;
+            for (size_t i = 0; i < size_; i++) std::construct_at(&dest[i], arr[i]);
 
             return *this;
         }
 
         void reserve(size_t count) {
-            if (count * width <= capacity) return;
+            if (count * width_ <= capacity_) return;
 
-            reallocate_(count * width);
+            reallocate_(count * width_);
         }
 
         void push_back(const T& value) {
-            if (size == capacity / width) reserve(size * 2 + 1);
+            if (size_ == capacity_ / width_) reserve(size_* 2 + 1);
 
-            T* arr = (T*)data;
-            std::construct_at(&arr[size], value);
+            T* arr = (T*)data_;
+            std::construct_at(&arr[size_], value);
 
-            size++;
+            size_++;
         }
 
         template <typename... Args>
         T& emplace_back(Args&&... args) {
-            if (size == capacity / width) reserve(size * 2 + 1);
+            if (size_ == capacity_ / width_) reserve(size_ * 2 + 1);
 
-            T* arr = (T*)data;
+            T* arr = (T*)data_;
+            std::construct_at(&arr[size_], std::forward<Args>(args)...);
 
-            std::construct_at(&arr[size], std::forward<Args>(args)...);
-
-            return arr[size++];
+            return arr[size_++];
         }
 
         void resize(size_t count) {
-            if (count < size) {
-                T* arr = (T*)data;
+            if (count < size_) {
+                T* arr = (T*)data_;
 
-                for (size_t i = count; i < size; i++) std::destroy_at(&arr[i]);
+                for (size_t i = count; i < size_; i++) std::destroy_at(&arr[i]);
 
-                size = count;
-            } else if (count > size) {
+                size_ = count;
+            } else if (count > size_) {
                 reserve(count);
 
-                T* arr = (T*)data;
+                T* arr = (T*)data_;
+                for (size_t i = size_; i < count; i++) std::construct_at(&arr[i]);
 
-                for (size_t i = size; i < count; i++) std::construct_at(&arr[i]);
-
-                size = count;
+                size_ = count;
             }
+        }
+
+        size_t size() {
+            return size_;
+        }
+        
+        size_t capacity() {
+            return capacity_;
         }
 };
